@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vector — твой кабинет</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0a0d;
+    --panel: rgba(255,255,255,0.045);
+    --panel-border: rgba(255,255,255,0.10);
+    --panel-hi: rgba(255,255,255,0.09);
+    --text: #f1f2f4;
+    --text-dim: #9a9ca6;
+    --text-faint: #5c5e68;
+    --accent: #aebbd8;
+    --accent-glow: rgba(174,187,216,0.5);
+    --line: rgba(255,255,255,0.08);
+    --radius: 18px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; overflow-x:hidden; -webkit-font-smoothing:antialiased;}
+  a{color:inherit; text-decoration:none;}
+  .wrap{max-width:1160px; margin:0 auto; padding:0 32px;}
+
+  .bg-glow{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(700px 500px at 82% -10%, rgba(174,187,216,0.10), transparent 60%),
+      radial-gradient(600px 400px at 10% 15%, rgba(255,255,255,0.05), transparent 60%);
+  }
+
+  #preloader{
+    position:fixed; inset:0; z-index:9999; background:#0a0a0d;
+    display:flex; align-items:center; justify-content:center;
+    transition:opacity .6s ease, visibility .6s ease;
+  }
+  #preloader.hide{opacity:0; visibility:hidden;}
+  #preloader .pl-logo{display:flex; flex-direction:column; align-items:center; gap:14px;}
+  #preloader .pl-text{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-faint); letter-spacing:2px;}
+  .pl-path{stroke-dasharray:80; stroke-dashoffset:80; animation:pl-line 1s ease forwards;}
+  .pl-path2{stroke-dasharray:40; stroke-dashoffset:40; animation:pl-line 1s ease .3s forwards;}
+  @keyframes pl-line{ to{ stroke-dashoffset:0; } }
+
+  #scroll-progress{
+    position:fixed; top:0; left:0; height:2px; width:0%;
+    background:linear-gradient(90deg, var(--accent), #fff);
+    z-index:9997; transition:width .1s linear;
+  }
+
+  header{
+    position:sticky; top:0; z-index:50;
+    background:rgba(10,10,13,0.72);
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);
+  }
+  nav{display:flex; align-items:center; justify-content:space-between; height:76px;}
+  .logo{display:flex; align-items:center; gap:10px; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:20px;}
+  .back-link{
+    font-size:14px; color:var(--text-dim); padding:10px 18px; border-radius:100px;
+    border:1px solid var(--panel-border); background:var(--panel); backdrop-filter:blur(10px);
+    transition:background .25s, border-color .25s, transform .2s, color .25s;
+  }
+  .back-link:hover{background:var(--panel-hi); border-color:rgba(255,255,255,0.22); transform:translateY(-1px); color:var(--text);}
+
+  .glass-card{
+    background:var(--panel); border:1px solid var(--panel-border); border-radius:var(--radius);
+    backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+    box-shadow:0 1px 0 rgba(255,255,255,0.06) inset, 0 20px 60px rgba(0,0,0,0.35);
+    transition:transform .3s ease, border-color .3s ease, background .3s ease;
+  }
+
+  section{position:relative; z-index:1; padding:64px 0;}
+  .section-head{max-width:620px; margin-bottom:44px;}
+  .kicker{font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:14px; display:block;}
+  h1{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:42px; letter-spacing:-1px; line-height:1.1;}
+  h2{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:30px; letter-spacing:-0.5px;}
+  .section-head p{color:var(--text-dim); margin-top:14px; font-size:15.5px; line-height:1.6;}
+
+  /* HERO / WELCOME */
+  .welcome{padding:80px 0 40px;}
+  .welcome-card{padding:44px; display:flex; justify-content:space-between; align-items:center; gap:24px; flex-wrap:wrap;}
+  .welcome-card p{color:var(--text-dim); font-size:15.5px; line-height:1.6; max-width:520px; margin-top:10px;}
+  .badge{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--accent);
+    border:1px solid var(--panel-border); background:rgba(174,187,216,0.08);
+    padding:8px 16px; border-radius:100px; white-space:nowrap;
+  }
+  .badge .dot{width:6px; height:6px; border-radius:50%; background:var(--accent); box-shadow:0 0 8px var(--accent-glow);}
+
+  /* ROADMAP */
+  .roadmap{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; position:relative;}
+  .roadmap::before{
+    content:''; position:absolute; top:29px; left:8%; right:8%; height:1px;
+    background:linear-gradient(90deg, var(--accent), rgba(174,187,216,0.15));
+    z-index:0;
+  }
+  .rstep{position:relative; z-index:1; padding:22px 18px;}
+  .rstep .rnum{
+    width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600;
+    background:#0e0e12; border:1px solid var(--panel-border); margin-bottom:16px;
+  }
+  .rstep.done .rnum{background:var(--accent); color:#0a0a0d; border-color:var(--accent);}
+  .rstep h4{font-family:'Space Grotesk',sans-serif; font-size:15.5px; font-weight:600; margin-bottom:6px;}
+  .rstep p{font-size:13px; color:var(--text-dim); line-height:1.5;}
+
+  /* TEACHERS */
+  .teacher-lead{padding:36px; display:grid; grid-template-columns:auto 1fr; gap:28px; align-items:center; margin-bottom:20px;}
+  .avatar{
+    width:92px; height:92px; border-radius:50%;
+    background:linear-gradient(160deg, rgba(174,187,216,0.35), rgba(255,255,255,0.05));
+    border:1px solid var(--panel-border);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:30px; color:var(--text);
+    flex-shrink:0;
+  }
+  .teacher-lead .role{
+    font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent);
+    border:1px solid var(--panel-border); padding:4px 12px; border-radius:100px; display:inline-block; margin-bottom:10px;
+  }
+  .teacher-lead h3{font-family:'Space Grotesk',sans-serif; font-size:24px; font-weight:700; margin-bottom:8px;}
+  .teacher-lead p{color:var(--text-dim); font-size:14.5px; line-height:1.6; max-width:560px;}
+  .mentor-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:16px;}
+  .mentor-card{padding:24px; display:flex; gap:16px; align-items:center;}
+  .mentor-card .avatar{width:56px; height:56px; font-size:18px;}
+  .mentor-card h4{font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:600; margin-bottom:4px;}
+  .mentor-card p{font-size:13px; color:var(--text-dim);}
+
+  /* LOCATION */
+  .location-grid{display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:stretch;}
+  .map-frame{border-radius:var(--radius); overflow:hidden; border:1px solid var(--panel-border); min-height:280px;}
+  .map-frame iframe{width:100%; height:100%; min-height:280px; border:0; display:block; filter:grayscale(0.3) invert(0.92) contrast(0.85);}
+  .loc-info{padding:32px; display:flex; flex-direction:column; justify-content:center; gap:16px;}
+  .loc-info .row{display:flex; gap:12px; align-items:flex-start;}
+  .loc-info .row svg{flex-shrink:0; margin-top:2px;}
+  .loc-info h4{font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; margin-bottom:4px;}
+  .loc-info p{font-size:13.5px; color:var(--text-dim); line-height:1.5;}
+  .loc-info .coords{font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--accent);}
+  .maps-link{
+    margin-top:8px; align-self:flex-start; font-size:13.5px; font-weight:600;
+    padding:10px 18px; border-radius:10px; background:linear-gradient(180deg,#f5f6f8,#dfe1e6); color:#0a0a0d;
+    transition:transform .2s;
+  }
+  .maps-link:hover{transform:translateY(-2px);}
+
+  /* PROJECTS */
+  .project-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
+  .project-card{padding:26px; transition:transform .3s ease, border-color .3s ease, background .3s ease;}
+  .project-card:hover{transform:translateY(-4px); border-color:rgba(255,255,255,0.2); background:var(--panel-hi);}
+  .project-card .pidx{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-faint); display:block; margin-bottom:14px;}
+  .project-card h4{font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:600; margin-bottom:8px;}
+  .project-card p{font-size:13.5px; color:var(--text-dim); line-height:1.55; margin-bottom:14px;}
+  .project-card .ptag{
+    font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--accent);
+    border:1px solid var(--panel-border); padding:3px 9px; border-radius:100px; display:inline-block;
+  }
+
+  footer{border-top:1px solid var(--line); padding:36px 0; position:relative; z-index:1;}
+  .foot-row{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; color:var(--text-dim); font-size:13.5px;}
+  .foot-row a:hover{color:var(--text);}
+
+  [data-reveal]{opacity:0; transform:translateY(16px); transition:opacity .6s ease, transform .6s ease;}
+  [data-reveal].in{opacity:1; transform:translateY(0);}
+
+  @media(max-width:900px){
+    .roadmap{grid-template-columns:1fr 1fr;}
+    .roadmap::before{display:none;}
+    .location-grid, .teacher-lead{grid-template-columns:1fr;}
+    .mentor-grid, .project-grid{grid-template-columns:1fr;}
+    h1{font-size:32px;}
+    .wrap{padding:0 20px;}
+  }
+</style>
+</head>
+<body>
+
+<div id="preloader">
+  <div class="pl-logo">
+    <svg width="44" height="44" viewBox="0 0 26 26" fill="none">
+      <path class="pl-path" d="M4 21L13 4L22 21" stroke="#f1f2f4" stroke-width="1.6" stroke-linejoin="round"/>
+      <path class="pl-path2" d="M13 4L13 21" stroke="#aebbd8" stroke-width="1.6"/>
+    </svg>
+    <div class="pl-text">VECTOR</div>
+  </div>
+</div>
+
+<div id="scroll-progress"></div>
+<div class="bg-glow"></div>
+
+<header>
+  <div class="wrap">
+    <nav>
+      <div class="logo">
+        <svg width="24" height="24" viewBox="0 0 26 26" fill="none">
+          <path d="M4 21L13 4L22 21" stroke="#f1f2f4" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M13 4L13 21" stroke="#aebbd8" stroke-width="1.6"/>
+          <path d="M13 4L20 8" stroke="#aebbd8" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        Vector
+      </div>
+      <a href="vector-landing.html" class="back-link">← На главную</a>
+    </nav>
+  </div>
+</header>
+
+<section class="welcome">
+  <div class="wrap">
+    <div class="glass-card welcome-card" data-reveal>
+      <div>
+        <span class="badge"><span class="dot"></span>ЗАЯВКА ПРИНЯТА</span>
+        <h1 id="welcomeTitle" style="margin-top:16px;">Добро пожаловать!</h1>
+        <p id="welcomeText">Мы получили твою заявку. Ниже — всё, что нужно знать перед первым шагом: расположение центра, твой наставник и проекты, которые тебя ждут.</p>
+      </div>
+      <span class="badge"><span class="dot"></span>ПОТОК #12 · НАБОР ОТКРЫТ</span>
+    </div>
+  </div>
+</section>
+
+<section id="roadmap">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="kicker">Твой путь</span>
+      <h2 data-reveal>Что дальше</h2>
+      <p>Четыре шага от заявки до первого занятия.</p>
+    </div>
+    <div class="roadmap">
+      <div class="glass-card rstep done" data-reveal>
+        <div class="rnum">✓</div>
+        <h4>Заявка принята</h4>
+        <p>Ты уже здесь — первый шаг сделан.</p>
+      </div>
+      <div class="glass-card rstep" data-reveal>
+        <div class="rnum">2</div>
+        <h4>Короткий созвон</h4>
+        <p>Куратор свяжется с тобой в Telegram в течение дня.</p>
+      </div>
+      <div class="glass-card rstep" data-reveal>
+        <div class="rnum">3</div>
+        <h4>Выбор направления</h4>
+        <p>Поможем выбрать трек, если ещё не определился.</p>
+      </div>
+      <div class="glass-card rstep" data-reveal>
+        <div class="rnum">4</div>
+        <h4>Первое занятие</h4>
+        <p>Приходишь в центр и пишешь первый код.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="teachers">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="kicker">Твой наставник</span>
+      <h2 data-reveal>Преподаватели Vector</h2>
+      <p>Учат действующие практики, а не только теоретики курса.</p>
+    </div>
+
+    <div class="glass-card teacher-lead" data-reveal>
+      <div class="avatar">СС</div>
+      <div>
+        <span class="role">Главный преподаватель · Web & Python</span>
+        <h3>Сардор Салимов</h3>
+        <p>Ведёт ключевые направления центра и лично курирует финальные проекты студентов — от первой строки кода до готового приложения в портфолио.</p>
+      </div>
+    </div>
+
+    <div class="mentor-grid">
+      <div class="glass-card mentor-card" data-reveal>
+        <div class="avatar">?</div>
+        <div>
+          <h4>Ментор направления Mobile</h4>
+          <p>Добавь фото и имя — карточка ждёт своего наставника.</p>
+        </div>
+      </div>
+      <div class="glass-card mentor-card" data-reveal>
+        <div class="avatar">?</div>
+        <div>
+          <h4>Ментор направления Web</h4>
+          <p>Добавь фото и имя — карточка ждёт своего наставника.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="location">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="kicker">Где мы находимся</span>
+      <h2 data-reveal>Расположение центра</h2>
+    </div>
+    <div class="location-grid" data-reveal>
+      <div class="map-frame">
+        <iframe src="https://www.google.com/maps?q=39.651861,66.953556&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+      <div class="glass-card loc-info">
+        <div class="row">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 21C12 21 5 14.5 5 9.5C5 5.9 8.1 3 12 3C15.9 3 19 5.9 19 9.5C19 14.5 12 21 12 21Z" stroke="#aebbd8" stroke-width="1.4"/><circle cx="12" cy="9.5" r="2.5" stroke="#aebbd8" stroke-width="1.4"/></svg>
+          <div>
+            <h4>Учебный центр Vector</h4>
+            <p class="coords">39°39'06.7"N 66°57'12.8"E</p>
+          </div>
+        </div>
+        <a class="maps-link" href="https://www.google.com/maps?q=39.651861,66.953556" target="_blank" rel="noopener">Открыть в Google Maps →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="projects">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="kicker">Портфолио выпускников</span>
+      <h2 data-reveal>Проекты, которые делают студенты</h2>
+      <p>Примеры работ по направлениям — таким же займёшься и ты.</p>
+    </div>
+    <div class="project-grid">
+      <div class="glass-card project-card" data-reveal>
+        <span class="pidx">// project</span>
+        <h4>Landing page кофейни</h4>
+        <p>Адаптивный сайт с формой брони столика и галереей меню.</p>
+        <span class="ptag">HTML/CSS/JS</span>
+      </div>
+      <div class="glass-card project-card" data-reveal>
+        <span class="pidx">// project</span>
+        <h4>Telegram-бот расписания</h4>
+        <p>Бот, который присылает студентам расписание и напоминания.</p>
+        <span class="ptag">Python</span>
+      </div>
+      <div class="glass-card project-card" data-reveal>
+        <span class="pidx">// project</span>
+        <h4>Приложение To-Do</h4>
+        <p>Мобильное приложение для планирования задач с локальным хранением.</p>
+        <span class="ptag">Kotlin</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-row">
+    <div>Vector · Ташкент · © 2026</div>
+    <div style="display:flex; gap:20px;">
+      <a href="https://t.me/algorithmicit" target="_blank" rel="noopener">Telegram</a>
+      <a href="https://www.instagram.com/algorithmicit" target="_blank" rel="noopener">Instagram</a>
+      <a href="vector-landing.html">На главную</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // персонализация из данных, переданных с формы на главной странице
+  const params = new URLSearchParams(window.location.search);
+  const name = params.get('name');
+  if (name) {
+    document.getElementById('welcomeTitle').textContent = `Добро пожаловать, ${name}!`;
+    document.getElementById('welcomeText').textContent = `Спасибо за заявку, ${name}! Мы уже получили твои данные. Ниже — расположение центра, твой наставник и проекты, которые тебя ждут.`;
+  }
+
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(en=>{ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
+  }, {threshold:0.15});
+  document.querySelectorAll('[data-reveal]').forEach(el=>io.observe(el));
+
+  // preloader
+  window.addEventListener('load', ()=>{
+    setTimeout(()=>{ const pl = document.getElementById('preloader'); if(pl) pl.classList.add('hide'); }, 400);
+  });
+
+  // scroll progress bar
+  window.addEventListener('scroll', ()=>{
+    const h = document.documentElement;
+    const scrolled = (h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100;
+    const bar = document.getElementById('scroll-progress');
+    if(bar) bar.style.width = scrolled + '%';
+  });
+</script>
+
+<!-- ИИ-помощник (Chatbase Widget) -->
+<script>
+(function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){window.chatbase=(...arguments)=>{if(!window.chatbase.q){window.chatbase.q=[]}window.chatbase.q.push(arguments)};window.chatbase=new Proxy(window.chatbase,{get(target,prop){if(prop==="q"){return target.q}return(...args)=>target(prop,...args)}})}const onLoad=function(){const script=document.createElement("script");script.src="https://www.chatbase.co/embed.min.js";script.id="b5okPu3cui6J87lUZeJXU";script.domain="www.chatbase.co";document.body.appendChild(script)};if(document.readyState==="complete"){onLoad()}else{window.addEventListener("load",onLoad)}})();
+</script>
+
+<!-- Заметная подсказка рядом с чат-виджетом -->
+<style>
+  #ai-callout{
+    position:fixed; right:24px; bottom:96px; z-index:9998;
+    display:flex; align-items:center; gap:10px;
+    background:rgba(20,20,24,0.85); border:1px solid rgba(255,255,255,0.14);
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    color:#f1f2f4; font-family:'Inter', sans-serif; font-size:14px;
+    padding:12px 16px; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,0.4);
+    opacity:0; transform:translateY(8px);
+    animation:ai-in .5s ease 1.2s forwards, ai-bob 2.6s ease-in-out 2s infinite;
+    cursor:pointer;
+  }
+  #ai-callout .ring{
+    width:10px; height:10px; border-radius:50%; background:#aebbd8;
+    box-shadow:0 0 0 rgba(174,187,216,0.6); animation:ai-pulse 1.8s infinite; flex-shrink:0;
+  }
+  #ai-callout .close{color:#5c5e68; font-size:16px; line-height:1; margin-left:4px; padding:2px;}
+  #ai-callout .close:hover{color:#9a9ca6;}
+  @keyframes ai-in{ to{ opacity:1; transform:translateY(0); } }
+  @keyframes ai-bob{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-6px);} }
+  @keyframes ai-pulse{
+    0%{ box-shadow:0 0 0 0 rgba(174,187,216,0.55); }
+    70%{ box-shadow:0 0 0 10px rgba(174,187,216,0); }
+    100%{ box-shadow:0 0 0 0 rgba(174,187,216,0); }
+  }
+  @media(max-width:880px){ #ai-callout{ right:16px; bottom:88px; font-size:13px; padding:10px 14px; } }
+</style>
+<div id="ai-callout">
+  <span class="ring"></span>
+  <span>Спроси ИИ-помощника Vector 👋</span>
+  <span class="close" onclick="this.parentElement.remove()">✕</span>
+</div>
+<script>
+  document.getElementById('ai-callout').addEventListener('click', function(e){
+    if(!e.target.classList.contains('close')) this.style.display='none';
+  });
+  setTimeout(()=>{ const el=document.getElementById('ai-callout'); if(el) el.style.display='none'; }, 15000);
+</script>
+
+</body>
+</html>
